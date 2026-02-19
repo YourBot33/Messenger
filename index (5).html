@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ChadwFriends - Connect & Chat</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <!-- Background -->
+    <div class="gradient-bg"></div>
+    <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+    </div>
+
+    <!-- Intro Screen -->
+    <div class="intro-screen" id="introScreen">
+        <div class="intro-content">
+            <div class="intro-logo">
+                <div class="logo-icon">💬</div>
+                <h1 class="intro-title">ChadwFriends</h1>
+                <p class="intro-tagline">Connect. Chat. Create memories.</p>
+            </div>
+            
+            <div class="intro-features">
+                <div class="feature-item">
+                    <span class="feature-icon">✨</span>
+                    <span>Real-time messaging</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🌸</span>
+                    <span>Beautiful aesthetic design</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">👥</span>
+                    <span>Private & Group chats</span>
+                </div>
+            </div>
+
+            <button class="enter-btn" onclick="enterApp()">
+                <span>Enter Chat</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            </button>
+
+            <div class="creator-credit">
+                <p>Created with 💜 by <span class="creator-name">ChristianM</span></p>
+                <p class="creator-year">© 2024</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Setup Modal -->
+    <div class="profile-modal" id="profileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Your Profile</h2>
+                <p>Set up your profile to start chatting</p>
+            </div>
+            
+            <div class="setup-profile">
+                <div class="setup-image" onclick="document.getElementById('setupFileInput').click()">
+                    <img id="setupProfileImage" style="display: none;" alt="Profile">
+                    <div class="setup-placeholder" id="setupPlaceholder">
+                        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span>Add Photo</span>
+                    </div>
+                </div>
+                <input type="file" id="setupFileInput" accept="image/*" onchange="handleSetupImage(event)">
+                
+                <div class="setup-fields">
+                    <div class="setup-group">
+                        <label>Your Name *</label>
+                        <input type="text" id="setupName" placeholder="Enter your name" maxlength="20">
+                    </div>
+                    
+                    <div class="setup-group">
+                        <label>Age</label>
+                        <input type="number" id="setupAge" placeholder="Your age" min="1" max="150">
+                    </div>
+                </div>
+                
+                <button class="setup-btn" onclick="saveSetupProfile()">
+                    <span>Start Chatting</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Connection Warning -->
+    <div class="connection-warning" id="connectionWarning">
+        <span>⚠️</span>
+        <span>Offline Mode</span>
+        <button onclick="retryConnection()" class="retry-btn">Retry</button>
+    </div>
+
+    <!-- Mobile Profile Drawer -->
+    <div class="profile-drawer" id="profileDrawer">
+        <div class="drawer-header">
+            <h3>Your Profile</h3>
+            <button class="close-drawer" onclick="toggleProfileDrawer()">×</button>
+        </div>
+        
+        <div class="drawer-content">
+            <div class="drawer-profile">
+                <img id="drawerImage" class="drawer-avatar" style="display: none;">
+                <div class="drawer-placeholder" id="drawerPlaceholder">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <h4 id="drawerName">Guest</h4>
+                <p id="drawerAge">--</p>
+            </div>
+            
+            <button class="edit-profile-btn" onclick="showEditModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Edit Profile
+            </button>
+        </div>
+    </div>
+    
+    <!-- Main App -->
+    <div class="app-container" id="appContainer">
+        <!-- Desktop Sidebar -->
+        <aside class="sidebar desktop-only">
+            <div class="sidebar-header">
+                <h2 class="logo">💬 ChadwFriends</h2>
+            </div>
+            
+            <!-- Chat Type Tabs -->
+            <div class="chat-tabs">
+                <button class="tab-btn active" onclick="switchTab('main')" id="tab-main">
+                    <span>💬</span>
+                    <span>Main Chat</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('private')" id="tab-private">
+                    <span>👤</span>
+                    <span>Private</span>
+                </button>
+            </div>
+            
+            <!-- Main Chat Users -->
+            <div class="users-section" id="mainUsersSection">
+                <div class="info-card">
+                    <h3 class="info-title">Online in Main Chat</h3>
+                    <div id="mainUsersList" class="users-list">
+                        <div class="user-item">
+                            <span class="user-dot"></span>
+                            <span>Just you</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Private Chat Users (Hidden by default) -->
+            <div class="users-section" id="privateUsersSection" style="display: none;">
+                <div class="info-card">
+                    <h3 class="info-title">Start Private Chat</h3>
+                    <p class="section-desc">Click a user to chat privately</p>
+                    <div id="privateUsersList" class="users-list">
+                        <div class="user-item empty">
+                            <span>No other users online</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Current Chat Info -->
+            <div class="current-chat-info" id="currentChatInfo">
+                <div class="chat-avatar" id="chatAvatar">
+                    <span>💬</span>
+                </div>
+                <div class="chat-details">
+                    <h4 id="chatName">Main Chat</h4>
+                    <p id="chatStatus">Group conversation</p>
+                </div>
+            </div>
+            
+            <!-- Theme Toggle at Bottom -->
+            <div class="sidebar-bottom">
+                <div class="theme-toggle">
+                    <button class="theme-btn" onclick="toggleTheme()">
+                        <span id="themeIcon">🌙</span>
+                        <span id="themeText">Dark Mode</span>
+                    </button>
+                </div>
+                
+                <div class="sidebar-footer">
+                    <p class="footer-credit">Made by ChristianM</p>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Chat Area -->
+        <main class="chat-area">
+            <header class="chat-header">
+                <div class="header-left">
+                    <button class="mobile-menu-btn mobile-only" onclick="toggleProfileDrawer()">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    
+                    <!-- Mobile Chat Selector -->
+                    <button class="mobile-chat-selector mobile-only" onclick="toggleMobileChatMenu()">
+                        <span id="mobileChatName">Main Chat</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    
+                    <div class="header-info desktop-only">
+                        <div class="chat-header-profile" id="headerProfile">
+                            <div class="header-avatar" id="headerAvatar">💬</div>
+                            <div>
+                                <h1 class="chat-title" id="headerChatName">Main Chat</h1>
+                                <span class="chat-subtitle" id="connectionStatus">Group chat</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="header-actions">
+                    <button class="icon-btn" onclick="showUserProfile()" title="View profile">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+            
+            <!-- Mobile Chat Tabs - ADDED THIS -->
+            <div class="mobile-chat-tabs mobile-only">
+                <button class="mobile-tab-btn active" onclick="switchTab('main')" id="mobile-tab-main">
+                    <span>💬</span>
+                    <span>Main Chat</span>
+                </button>
+                <button class="mobile-tab-btn" onclick="switchTab('private')" id="mobile-tab-private">
+                    <span>👤</span>
+                    <span>Private</span>
+                </button>
+            </div>
+            
+            <!-- Mobile Chat Menu -->
+            <div class="mobile-chat-menu" id="mobileChatMenu">
+                <div class="mobile-menu-item active" onclick="switchTab('main'); toggleMobileChatMenu();">
+                    <span>💬 Main Chat</span>
+                </div>
+                <div class="mobile-menu-header">Private Chats</div>
+                <div id="mobilePrivateList">
+                    <div class="mobile-menu-item empty">No private chats</div>
+                </div>
+            </div>
+            
+            <div class="messages-wrapper">
+                <div class="messages-container" id="messagesContainer">
+                    <div class="welcome-message">
+                        <div class="welcome-bubble">
+                            <h3>Welcome to ChadwFriends! ✨</h3>
+                            <p>Start typing to send messages to the group</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="typing-indicator" id="typingIndicator">
+                    <div class="typing-bubble">
+                        <span>Someone is typing</span>
+                        <div class="typing-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="input-area">
+                <div class="reply-bar" id="replyBar">
+                    <div class="reply-content">
+                        <span class="reply-label">Replying to</span>
+                        <span class="reply-text" id="replyText"></span>
+                    </div>
+                    <button class="close-reply" onclick="cancelReply()">×</button>
+                </div>
+                
+                <div class="input-wrapper">
+                    <button class="emoji-btn" onclick="toggleEmojiPicker()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                        </svg>
+                    </button>
+                    
+                    <div class="text-input-wrapper">
+                        <textarea 
+                            id="messageInput" 
+                            class="message-input" 
+                            placeholder="Type a message..."
+                            rows="1"
+                        ></textarea>
+                    </div>
+                    
+                    <button class="send-btn" onclick="sendMessage()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="emoji-picker" id="emojiPicker">
+                    <div class="emoji-grid">
+                        <button onclick="addEmoji('😊')">😊</button>
+                        <button onclick="addEmoji('😂')">😂</button>
+                        <button onclick="addEmoji('❤️')">❤️</button>
+                        <button onclick="addEmoji('✨')">✨</button>
+                        <button onclick="addEmoji('🌸')">🌸</button>
+                        <button onclick="addEmoji('🎀')">🎀</button>
+                        <button onclick="addEmoji('💖')">💖</button>
+                        <button onclick="addEmoji('🌙')">🌙</button>
+                        <button onclick="addEmoji('☕')">☕</button>
+                        <button onclick="addEmoji('🌿')">🌿</button>
+                        <button onclick="addEmoji('✌️')">✌️</button>
+                        <button onclick="addEmoji('🤍')">🤍</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Mobile Theme Toggle - ADDED THIS -->
+    <div class="mobile-theme-toggle mobile-only">
+        <button class="mobile-theme-btn" onclick="toggleTheme()" id="mobileThemeBtn" title="Toggle theme">
+            🌙
+        </button>
+    </div>
+
+    <!-- User Profile Modal -->
+    <div class="user-profile-modal" id="userProfileModal">
+        <div class="user-profile-content">
+            <button class="close-modal" onclick="closeUserProfile()">×</button>
+            <div class="user-profile-header">
+                <img id="viewProfileImage" style="display: none;">
+                <div class="view-profile-placeholder" id="viewProfilePlaceholder">
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <h3 id="viewProfileName">User</h3>
+                <p id="viewProfileAge">--</p>
+            </div>
+            <div class="user-profile-actions">
+                <button class="profile-action-btn" id="privateChatBtn" onclick="startPrivateChat()">
+                    <span>💬</span>
+                    <span>Start Private Chat</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="./app.js"></script>
+</body>
+</html>
